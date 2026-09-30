@@ -8,7 +8,7 @@ const POD = process.env.HOSTNAME || 'local';
 router.post('/', async (req, res) => {
   const { student_id, course_id } = req.body;
   if (!student_id || !course_id) {
-    return res.status(400).json({ error: 'student_id and course_id are required' });
+    return res.status(400).json({ error: 'student_id and course_id are required', served_by: POD });
   }
 
   const client = await pool.connect();
@@ -21,12 +21,12 @@ router.post('/', async (req, res) => {
     );
     if (!courseRes.rows.length) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Course not found' });
+      return res.status(404).json({ error: 'Course not found', served_by: POD });
     }
     const course = courseRes.rows[0];
     if (course.available_slots <= 0) {
       await client.query('ROLLBACK');
-      return res.status(409).json({ error: 'No available slots in this course' });
+      return res.status(409).json({ error: 'No available slots in this course', served_by: POD });
     }
 
     const studentRes = await client.query(
@@ -35,7 +35,7 @@ router.post('/', async (req, res) => {
     );
     if (!studentRes.rows.length) {
       await client.query('ROLLBACK');
-      return res.status(404).json({ error: 'Student not found' });
+      return res.status(404).json({ error: 'Student not found', served_by: POD });
     }
 
     const existingRes = await client.query(
@@ -44,7 +44,7 @@ router.post('/', async (req, res) => {
     );
     if (existingRes.rows.length) {
       await client.query('ROLLBACK');
-      return res.status(409).json({ error: 'Student is already enrolled in this course' });
+      return res.status(409).json({ error: 'Student is already enrolled in this course', served_by: POD });
     }
 
     const enrollRes = await client.query(
@@ -72,7 +72,7 @@ router.post('/', async (req, res) => {
     });
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {});
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, served_by: POD });
   } finally {
     client.release();
   }
@@ -91,7 +91,7 @@ router.get('/student/:student_id', async (req, res) => {
     );
     res.json({ data: rows, served_by: POD });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: err.message, served_by: POD });
   }
 });
 

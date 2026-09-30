@@ -166,21 +166,23 @@ async function courseRequest() {
 async function enrollRequest() {
   const t0 = performance.now();
   try {
-    const res    = await enroll(rand(STUDENT_IDS), rand(COURSE_IDS));
-    const ms     = Math.round(performance.now() - t0);
-    const pod    = res.data.served_by || 'desconocido';
+    const res = await enroll(rand(STUDENT_IDS), rand(COURSE_IDS));
+    const ms  = Math.round(performance.now() - t0);
+    const pod = res.data.served_by || 'desconocido';
     totalRequests.value++;
     dbHits.value++;
     log.value.push({ n: totalRequests.value, pod, source: 'db', ms, ok: true, type: 'POST' });
   } catch (e) {
     const ms  = Math.round(performance.now() - t0);
-    const pod = e.response?.data?.served_by || 'desconocido';
+    const pod = e.response?.data?.served_by;
     totalRequests.value++;
-    // 409 = conflicto (ya matriculado) — es válido, cuenta el pod
-    if (e.response?.status === 409 && pod !== 'desconocido') {
+    if (pod) {
+      // El pod respondió (409 sin vacantes, ya inscrito, 404, etc.) — cuenta el pod
       dbHits.value++;
-      log.value.push({ n: totalRequests.value, pod, source: 'db', ms, ok: true, type: 'POST' });
+      const ok = e.response?.status < 500;
+      log.value.push({ n: totalRequests.value, pod, source: 'db', ms, ok, type: 'POST' });
     } else {
+      // Sin respuesta del servidor (red caída, pod terminando, etc.)
       log.value.push({ n: totalRequests.value, pod: 'error', source: '-', ms, ok: false, type: 'POST' });
     }
   }
