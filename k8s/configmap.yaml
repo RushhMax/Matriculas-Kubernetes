@@ -10,4 +10,5 @@ data:
   REDIS_HOST: redis-service
   REDIS_PORT: "6379"
   PORT:       "3000"
+  DEMO_MODE:  "true"
   BACKEND_URL: http://backend-service:3000

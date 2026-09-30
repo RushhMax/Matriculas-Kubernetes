@@ -3,13 +3,21 @@ kind: Ingress
 metadata:
   name: unsa-ingress
   namespace: unsa-matricula
-  annotations:
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
 spec:
-  ingressClassName: nginx
+  ingressClassName: traefik
   rules:
     - host: unsa.local
       http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend-service
+                port:
+                  number: 80
+    # Regla adicional para la demo local cuando no se puede editar el archivo hosts.
+    - http:
         paths:
           - path: /
             pathType: Prefix

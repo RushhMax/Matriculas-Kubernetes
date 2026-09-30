@@ -1,0 +1,10 @@
+﻿Evidencia: 07-rollout
+Fecha: 2026-09-30 03:18:17 -05:00
+
+deployment.apps/backend 
+REVISION  CHANGE-CAUSE
+1         <none>
+4         <none>
+5         <none>
+
+

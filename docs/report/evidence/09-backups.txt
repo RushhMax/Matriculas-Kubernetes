@@ -1,0 +1,11 @@
+﻿Evidencia: 09-backups
+Fecha: 2026-09-30 03:18:18 -05:00
+
+NAME                            SCHEDULE      TIMEZONE   SUSPEND   ACTIVE   LAST SCHEDULE   AGE
+cronjob.batch/postgres-backup   */5 * * * *   <none>     False     0        3m18s           88m
+
+NAME                                 STATUS     COMPLETIONS   DURATION   AGE
+job.batch/postgres-backup-29845925   Complete   1/1           4s         13m
+job.batch/postgres-backup-29845930   Complete   1/1           3s         8m18s
+job.batch/postgres-backup-29845935   Complete   1/1           4s         3m18s
+

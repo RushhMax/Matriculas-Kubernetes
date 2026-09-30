@@ -1,0 +1,13 @@
+﻿Evidencia: 03-pods
+Fecha: 2026-09-30 03:18:16 -05:00
+
+NAME                             READY   STATUS      RESTARTS      AGE     IP            NODE                    NOMINATED NODE   READINESS GATES
+backend-5bf775555c-jf4v8         1/1     Running     1 (37m ago)   39m     10.244.0.41   desktop-control-plane   <none>           <none>
+backend-5bf775555c-zglrb         1/1     Running     0             44m     10.244.0.38   desktop-control-plane   <none>           <none>
+frontend-bc75d8c68-7l4s9         1/1     Running     0             33m     10.244.0.45   desktop-control-plane   <none>           <none>
+postgres-0                       1/1     Running     0             38m     10.244.0.42   desktop-control-plane   <none>           <none>
+postgres-backup-29845925-rcz2s   0/1     Completed   0             13m     10.244.0.55   desktop-control-plane   <none>           <none>
+postgres-backup-29845930-zz95b   0/1     Completed   0             8m17s   10.244.0.57   desktop-control-plane   <none>           <none>
+postgres-backup-29845935-9n5pt   0/1     Completed   0             3m17s   10.244.0.58   desktop-control-plane   <none>           <none>
+redis-77d6d984f5-tjm4t           1/1     Running     0             88m     10.244.0.11   desktop-control-plane   <none>           <none>
+

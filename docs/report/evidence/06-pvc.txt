@@ -1,0 +1,24 @@
+﻿Evidencia: 06-pvc
+Fecha: 2026-09-30 03:18:17 -05:00
+
+NAME                   STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE
+postgres-backups-pvc   Bound    pvc-25e1b5b2-748f-429e-a5e5-55d4c0d6131f   1Gi        RWO            standard       <unset>                 88m
+postgres-pvc           Bound    pvc-3b8a1ce9-0abb-47e9-b882-987c5baeb31d   1Gi        RWO            standard       <unset>                 88m
+Name:          postgres-pvc
+Namespace:     unsa-matricula
+StorageClass:  standard
+Status:        Bound
+Volume:        pvc-3b8a1ce9-0abb-47e9-b882-987c5baeb31d
+Labels:        <none>
+Annotations:   pv.kubernetes.io/bind-completed: yes
+               pv.kubernetes.io/bound-by-controller: yes
+               volume.beta.kubernetes.io/storage-provisioner: rancher.io/local-path
+               volume.kubernetes.io/selected-node: desktop-control-plane
+               volume.kubernetes.io/storage-provisioner: rancher.io/local-path
+Finalizers:    [kubernetes.io/pvc-protection]
+Capacity:      1Gi
+Access Modes:  RWO
+VolumeMode:    Filesystem
+Used By:       postgres-0
+Events:        <none>
+

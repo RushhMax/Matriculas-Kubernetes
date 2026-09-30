@@ -22,6 +22,7 @@ Instalar las siguientes herramientas antes de continuar:
 |-------------|-----------------|---------------|
 | Docker Desktop (con Kubernetes) | https://www.docker.com/products/docker-desktop/ | 29.x |
 | kubectl | Viene incluido con Docker Desktop | v1.36+ |
+| Helm | https://helm.sh/docs/intro/install/ | v3/v4 |
 | k6 (pruebas de carga) | https://grafana.com/docs/k6/latest/set-up/install-k6/ | latest |
 
 ### Habilitar Kubernetes en Docker Desktop
@@ -60,18 +61,13 @@ docker compose down -v
 
 ## 3. Desplegar en Kubernetes (Docker Desktop)
 
-### 3.1 Instalar nginx Ingress Controller (una sola vez)
+### 3.1 Instalar Traefik Ingress Controller (una sola vez)
 
 ```powershell
-kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.10.0/deploy/static/provider/cloud/deploy.yaml
-
-# Esperar a que esté listo (puede tardar ~2 minutos)
-kubectl wait --namespace ingress-nginx `
-  --for=condition=ready pod `
-  --selector=app.kubernetes.io/component=controller `
-  --timeout=120s
-
-# Debe mostrar: pod/ingress-nginx-controller-xxx condition met
+helm repo add traefik https://traefik.github.io/charts
+helm repo update
+helm upgrade --install traefik traefik/traefik `
+  --namespace traefik --create-namespace --wait
 ```
 
 ### 3.2 Instalar Metrics Server (una sola vez, necesario para HPA)
@@ -149,8 +145,8 @@ Comandos dentro de K9s:
 > (índice multi-arquitectura) que Kubernetes no puede resolver con imágenes locales.
 
 ```powershell
-docker build --provenance=false -t unsa-matricula-backend:latest ./backend
-docker build --provenance=false -t unsa-matricula-frontend:latest ./frontend
+docker build --provenance=false --build-arg APP_VERSION=demo-v1.2.0 -t unsa-matricula-backend:demo-v1.2.0 ./backend
+docker build --provenance=false -t unsa-matricula-frontend:demo-v1.2.1 ./frontend
 ```
 
 ### 3.4 Aplicar todos los manifests
@@ -160,9 +156,15 @@ kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/
 ```
 
-### 3.5 Agregar entrada en el archivo hosts
+### 3.5 Acceso local
 
-Abrir **PowerShell como Administrador** y ejecutar:
+La configuración incluye una regla local y funciona directamente en:
+
+```text
+http://localhost
+```
+
+Opcionalmente, abrir **PowerShell como Administrador** y ejecutar:
 
 ```powershell
 Add-Content -Path "C:\Windows\System32\drivers\etc\hosts" -Value "127.0.0.1 unsa.local"
@@ -193,7 +195,7 @@ kubectl get ingress -n unsa-matricula
 # Debe mostrar ADDRESS asignado
 ```
 
-Acceder en: **http://unsa.local**
+Acceder en: **http://localhost** o **http://unsa.local** si se configuró `hosts`.
 
 ---
 
@@ -205,8 +207,8 @@ Kubernetes cachea el tag `latest` en containerd y no lo actualiza aunque Docker 
 Solución: usar un tag nuevo en cada rebuild:
 
 ```powershell
-docker build --provenance=false -t unsa-matricula-frontend:v2 ./frontend
-kubectl set image deployment/frontend frontend=unsa-matricula-frontend:v2 -n unsa-matricula
+docker build --provenance=false -t unsa-matricula-frontend:demo-v1.2.2 ./frontend
+kubectl set image deployment/frontend frontend=unsa-matricula-frontend:demo-v1.2.2 -n unsa-matricula
 # Actualizar también k8s/frontend-deployment.yaml con el nuevo tag
 ```
 
@@ -218,8 +220,8 @@ Docker Desktop a veces almacena imágenes como manifest lists que Kubernetes no 
 Solución: reconstruir con `--provenance=false`:
 
 ```powershell
-docker build --provenance=false -t unsa-matricula-backend:latest ./backend
-docker build --provenance=false -t unsa-matricula-frontend:latest ./frontend
+docker build --provenance=false --build-arg APP_VERSION=demo-v1.2.0 -t unsa-matricula-backend:demo-v1.2.0 ./backend
+docker build --provenance=false -t unsa-matricula-frontend:demo-v1.2.1 ./frontend
 kubectl rollout restart deployment/backend deployment/frontend -n unsa-matricula
 ```
 
@@ -231,7 +233,7 @@ Seguir el paso 3.2 completo.
 ### El Ingress no responde en http://unsa.local
 
 Verificar que:
-1. El Ingress Controller está corriendo: `kubectl get pods -n ingress-nginx`
+1. El Ingress Controller está corriendo: `kubectl get pods -n traefik`
 2. La entrada en hosts está guardada: `cat C:\Windows\System32\drivers\etc\hosts`
 3. El Ingress tiene ADDRESS asignado: `kubectl get ingress -n unsa-matricula`
 
@@ -311,8 +313,8 @@ kubectl get jobs -n unsa-matricula
 
 ```powershell
 # Hacer un cambio en el backend y reconstruir
-docker build --provenance=false -t unsa-matricula-backend:v2 ./backend
-kubectl set image deployment/backend backend=unsa-matricula-backend:v2 -n unsa-matricula
+docker build --provenance=false --build-arg APP_VERSION=demo-v2.0.0 -t unsa-matricula-backend:demo-v2.0.0 ./backend
+kubectl set image deployment/backend backend=unsa-matricula-backend:demo-v2.0.0 -n unsa-matricula
 kubectl rollout status deployment/backend -n unsa-matricula
 
 # Si algo falla, rollback en un comando:
@@ -328,13 +330,19 @@ kubectl rollout undo deployment/backend -n unsa-matricula
 k6 run load-tests/k6.js
 
 # Contra Kubernetes
-k6 run -e BASE_URL=http://unsa.local load-tests/k6.js
+k6 run -e BASE_URL=http://localhost/api load-tests/k6.js
 ```
 
 Métricas que registra:
-- `api_latency_ms` — latencia por endpoint
-- `enroll_success_rate` — tasa de éxito de matrículas
+- `request_success_rate` — disponibilidad de la API durante la carga
+- `api_latency_ms` — latencia de `/load` y `/courses`
 - `errors` — contador de errores
+
+La prueba funcional de matrícula se ejecuta por separado:
+
+```powershell
+k6 run -e BASE_URL=http://localhost/api load-tests/enrollment-smoke.js
+```
 
 ---
 
@@ -384,5 +392,30 @@ proyecto1/
 │   ├── ingress.yaml
 │   └── cronjob-backup.yaml
 ├── load-tests/        # Scripts k6
+├── scripts/           # Despliegue, dashboard y experimentos reproducibles
+├── observability/     # Valores Helm de Prometheus/Grafana
+├── docs/report/       # Informe LaTeX, capturas y evidencias
+├── .github/workflows/ # CI y publicación de imágenes en GHCR
 └── docker-compose.yml
 ```
+
+---
+
+## 9. Centro de demostración e informe
+
+El dashboard de consola presenta arquitectura, Pods, HPA, métricas, eventos, diagnóstico y
+acciones guiadas:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/dashboard.ps1
+```
+
+Para instalar Prometheus y Grafana:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/install-observability.ps1
+kubectl port-forward -n monitoring svc/monitoring-grafana 3001:80
+```
+
+Grafana queda en `http://localhost:3001` con usuario `admin` y contraseña
+`unsa-grafana-demo`.

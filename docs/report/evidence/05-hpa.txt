@@ -1,0 +1,27 @@
+﻿Evidencia: 05-hpa
+Fecha: 2026-09-30 03:18:17 -05:00
+
+Name:                                                  backend-hpa
+Namespace:                                             unsa-matricula
+Labels:                                                <none>
+Annotations:                                           <none>
+CreationTimestamp:                                     Wed, 30 Sep 2026 01:50:07 -0500
+Reference:                                             Deployment/backend
+Metrics:                                               ( current / target )
+  resource cpu on pods  (as a percentage of request):  1% (1m) / 50%
+Min replicas:                                          2
+Max replicas:                                          5
+Deployment pods:                                       2 current / 2 desired
+Conditions:
+  Type            Status  Reason            Message
+  ----            ------  ------            -------
+  AbleToScale     True    ReadyForNewScale  recommended size matches current size
+  ScalingActive   True    ValidMetricFound  the HPA was able to successfully calculate a replica count from cpu resource utilization (percentage of request)
+  ScalingLimited  True    TooFewReplicas    the desired replica count is less than the minimum replica count
+Events:
+  Type     Reason                        Age                 From                       Message
+  ----     ------                        ----                ----                       -------
+  Normal   SuccessfulRescale             58m                 horizontal-pod-autoscaler  New size: 2; reason: All metrics below target
+  Warning  FailedGetResourceMetric       43m (x10 over 87m)  horizontal-pod-autoscaler  failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+  Warning  FailedComputeMetricsReplicas  43m (x10 over 87m)  horizontal-pod-autoscaler  invalid metrics (1 invalid out of 1), first error is: failed to get cpu resource metric value: failed to get cpu utilization: did not receive metrics for targeted pods (pods might be unready)
+

@@ -19,7 +19,12 @@ const router = createRouter({
 });
 
 router.beforeEach((to, _from, next) => {
-  const student = JSON.parse(localStorage.getItem('student') || 'null');
+  let student = JSON.parse(localStorage.getItem('student') || 'null');
+  // Acceso reproducible para exposición/capturas; solo selecciona el estudiante seed #1.
+  if (!student && to.query.demo === '1') {
+    student = { id: 1, code: '20201001', name: 'Andrea Mamani Quispe' };
+    localStorage.setItem('student', JSON.stringify(student));
+  }
   if (to.meta.requiresAuth && !student) return next('/');
   if (to.path === '/' && student) return next('/courses');
   next();

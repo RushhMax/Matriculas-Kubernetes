@@ -1,0 +1,72 @@
+
+[1m[38;5;45mUNSA MATRICULA - ARQUITECTURA CLOUD-NATIVE[0m
+[38;5;245m==================================================[0m
+[38;5;39m                         ESTUDIANTES[0m
+                              |
+                              v
+                    +-------------------+
+                    | INGRESS / GATEWAY |
+                    +---------+---------+
+                              |
+                    +---------v---------+
+                    | frontend-service  |
+                    +---------+---------+
+                              |
+                    +---------v---------+
+                    |   Frontend Pod    |
+                    |    Vue + Nginx    |
+                    +---------+---------+
+                              | /api
+                    +---------v---------+
+                    | backend-service   |
+                    +----+----------+---+
+                         |          |
+                  +------v--+    +--v------+
+                  | Pod B1  | .. | Pod Bn  |  <--- HPA 2..5
+                  +----+----+    +----+----+
+                       +--------------+
+                              |
+              +---------------+----------------+
+              |                                |
+      +-------v--------+              +--------v-------+
+      | PostgreSQL STS |              | Redis Cache    |
+      | PVC: datos     |              | Deployment     |
+      +-------+--------+              +----------------+
+              |
+      +-------v--------+
+      | CronJob Backup |
+      | PVC: respaldos |
+      +----------------+
+[38;5;245mFlujo: Ingress -> Frontend -> Service backend -> Pods -> PostgreSQL/Redis[0m
+
+[1m[38;5;45mESTADO ACTUAL DEL CLUSTER[0m
+[38;5;245m=================================[0m
+NAME                             READY   STATUS      RESTARTS      AGE     IP            NODE                    NOMINATED NODE   READINESS GATES
+backend-5bf775555c-jf4v8         1/1     Running     1 (37m ago)   39m     10.244.0.41   desktop-control-plane   <none>           <none>
+backend-5bf775555c-zglrb         1/1     Running     0             44m     10.244.0.38   desktop-control-plane   <none>           <none>
+frontend-bc75d8c68-7l4s9         1/1     Running     0             33m     10.244.0.45   desktop-control-plane   <none>           <none>
+postgres-0                       1/1     Running     0             38m     10.244.0.42   desktop-control-plane   <none>           <none>
+postgres-backup-29845925-rcz2s   0/1     Completed   0             13m     10.244.0.55   desktop-control-plane   <none>           <none>
+postgres-backup-29845930-zz95b   0/1     Completed   0             8m19s   10.244.0.57   desktop-control-plane   <none>           <none>
+postgres-backup-29845935-9n5pt   0/1     Completed   0             3m19s   10.244.0.58   desktop-control-plane   <none>           <none>
+redis-77d6d984f5-tjm4t           1/1     Running     0             88m     10.244.0.11   desktop-control-plane   <none>           <none>
+
+HPA Y METRICAS
+NAME          REFERENCE            TARGETS       MINPODS   MAXPODS   REPLICAS   AGE
+backend-hpa   Deployment/backend   cpu: 1%/50%   2         5         2          88m
+NAME                       CPU(cores)   MEMORY(bytes)   
+backend-5bf775555c-jf4v8   2m           22Mi            
+backend-5bf775555c-zglrb   1m           23Mi            
+frontend-bc75d8c68-7l4s9   1m           12Mi            
+postgres-0                 7m           28Mi            
+redis-77d6d984f5-tjm4t     9m           11Mi            
+
+EVENTOS RECIENTES
+8m16s       Normal    Completed                      job/postgres-backup-29845930          Job completed
+3m19s       Normal    SuccessfulCreate               cronjob/postgres-backup               (combined from similar events): Created job postgres-backup-29845935
+3m19s       Normal    SuccessfulCreate               job/postgres-backup-29845935          Created pod: postgres-backup-29845935-9n5pt
+3m19s       Normal    Started                        pod/postgres-backup-29845935-9n5pt    Container started
+3m19s       Normal    Created                        pod/postgres-backup-29845935-9n5pt    Container created
+3m19s       Normal    Pulled                         pod/postgres-backup-29845935-9n5pt    Container image "postgres:15-alpine" already present on machine and can be accessed by the pod
+3m19s       Normal    Scheduled                      pod/postgres-backup-29845935-9n5pt    Successfully assigned unsa-matricula/postgres-backup-29845935-9n5pt to desktop-control-plane
+3m15s       Normal    Completed                      job/postgres-backup-29845935          Job completed

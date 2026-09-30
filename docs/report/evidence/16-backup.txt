@@ -1,0 +1,8 @@
+﻿Fecha: 2026-09-30 02:41:04 -05:00
+
+Experimento: ejecuciÃ³n manual desde el CronJob
+Job: backup-evidence-024101
+Backup persistente: backup-20260930-074102.sql (9187 bytes)
+
+NAME                   STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   VOLUMEATTRIBUTESCLASS   AGE   VOLUMEMODE postgres-backups-pvc   Bound    pvc-25e1b5b2-748f-429e-a5e5-55d4c0d6131f   1Gi        RWO            standard       <unset>                 50m   Filesystem
+Resultado: pg_dump generÃ³ un archivo no vacÃ­o dentro del PVC de backups.

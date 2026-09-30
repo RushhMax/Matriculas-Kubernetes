@@ -1,0 +1,60 @@
+name: Build, validate and publish
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+      - name: Backend dependencies and syntax
+        working-directory: backend
+        run: |
+          npm ci
+          find src -name '*.js' -print0 | xargs -0 -n1 node --check
+      - name: Frontend production build
+        working-directory: frontend
+        run: |
+          npm ci
+          npm run build
+      - name: Validate Docker Compose
+        run: docker compose config --quiet
+      - name: Build containers
+        run: |
+          docker build -t unsa-matricula-backend:ci ./backend
+          docker build -t unsa-matricula-frontend:ci ./frontend
+
+  publish:
+    if: github.event_name == 'push'
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.component }}
+          push: true
+          tags: ghcr.io/${{ github.repository }}/${{ matrix.component }}:${{ github.sha }}

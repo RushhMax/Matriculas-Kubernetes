@@ -79,7 +79,7 @@
               <td><span class="badge" :class="entry.type === 'POST' ? 'badge-yellow' : 'badge-gray'">{{ entry.type }}</span></td>
               <td>
                 <span class="badge" :class="entry.source === 'cache' ? 'badge-blue' : 'badge-gray'">
-                  {{ entry.source === 'cache' ? '⚡ caché' : '🗄 db' }}
+                  {{ entry.source === 'cache' ? '⚡ caché' : entry.source === 'cpu' ? '🔥 CPU' : '🗄 db' }}
                 </span>
               </td>
               <td class="mono">{{ entry.ms }}ms</td>
@@ -97,20 +97,18 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
-import { getCourses, enroll } from '../api/index.js';
+import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { getCourses, generateCpuLoad } from '../api/index.js';
 import { useAuth } from '../composables/useAuth.js';
 
 const auth         = useAuth();
+const route        = useRoute();
 const log          = ref([]);
 const totalRequests = ref(0);
 const cacheHits    = ref(0);
 const dbHits       = ref(0);
 const firing       = ref(false);
-
-const STUDENT_IDS = Array.from({ length: 100 }, (_, i) => i + 1);
-const COURSE_IDS  = Array.from({ length: 30  }, (_, i) => i + 1);
-const rand = arr => arr[Math.floor(Math.random() * arr.length)];
 
 const recentLog = computed(() => [...log.value].reverse().slice(0, 30));
 
@@ -136,9 +134,9 @@ async function fireRequests(n, mode) {
   for (let i = 0; i < n; i += CONCURRENCY) {
     const batch = [];
     for (let j = 0; j < CONCURRENCY && i + j < n; j++) {
-      // mixed: alterna entre GET courses y POST enrollment para estresar CPU
-      const useEnroll = mode === 'mixed' && Math.random() > 0.4;
-      batch.push(useEnroll ? enrollRequest() : courseRequest());
+      // En modo mixto se combina negocio real con carga CPU controlada para el HPA.
+      const useCpuLoad = mode === 'mixed' && Math.random() > 0.35;
+      batch.push(useCpuLoad ? cpuLoadRequest() : courseRequest());
     }
     await Promise.allSettled(batch);
     await new Promise(r => setTimeout(r, 20));
@@ -163,27 +161,25 @@ async function courseRequest() {
   }
 }
 
-async function enrollRequest() {
+async function cpuLoadRequest() {
   const t0 = performance.now();
   try {
-    const res = await enroll(rand(STUDENT_IDS), rand(COURSE_IDS));
+    const res = await generateCpuLoad(30);
     const ms  = Math.round(performance.now() - t0);
     const pod = res.data.served_by || 'desconocido';
     totalRequests.value++;
-    dbHits.value++;
-    log.value.push({ n: totalRequests.value, pod, source: 'db', ms, ok: true, type: 'POST' });
+    log.value.push({ n: totalRequests.value, pod, source: 'cpu', ms, ok: true, type: 'CPU' });
   } catch (e) {
     const ms  = Math.round(performance.now() - t0);
     const pod = e.response?.data?.served_by;
     totalRequests.value++;
     if (pod) {
-      // El pod respondió (409 sin vacantes, ya inscrito, 404, etc.) — cuenta el pod
-      dbHits.value++;
+      // El pod respondió con error controlado: se conserva para observar distribución.
       const ok = e.response?.status < 500;
-      log.value.push({ n: totalRequests.value, pod, source: 'db', ms, ok, type: 'POST' });
+      log.value.push({ n: totalRequests.value, pod, source: 'cpu', ms, ok, type: 'CPU' });
     } else {
       // Sin respuesta del servidor (red caída, pod terminando, etc.)
-      log.value.push({ n: totalRequests.value, pod: 'error', source: '-', ms, ok: false, type: 'POST' });
+      log.value.push({ n: totalRequests.value, pod: 'error', source: '-', ms, ok: false, type: 'CPU' });
     }
   }
 }
@@ -194,6 +190,10 @@ function reset() {
   cacheHits.value = 0;
   dbHits.value = 0;
 }
+
+onMounted(() => {
+  if (route.query.autofire === '1') fireRequests(50, 'light');
+});
 </script>
 
 <style scoped>

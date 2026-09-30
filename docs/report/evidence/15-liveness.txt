@@ -1,0 +1,9 @@
+﻿Fecha: 2026-09-30 02:41:01 -05:00
+
+Experimento: falla controlada del endpoint /health
+Pod: backend-5bf775555c-jf4v8
+Respuesta de activaciÃ³n: health failure enabled
+Reinicios antes: 0
+Reinicios despuÃ©s: 1
+ValidaciÃ³n: True
+Resultado: despuÃ©s de tres fallos de liveness, kubelet reiniciÃ³ el contenedor.

@@ -1,0 +1,10 @@
+﻿Fecha: 2026-09-30 02:39:53 -05:00
+
+Experimento: recreaciÃ³n de postgres-0
+UID antes: 2f1a97ef-9270-462f-87df-d2e61b346dd5
+UID despuÃ©s: 1bffe504-f462-46eb-8e64-05e79774b2d0
+MatrÃ­culas antes: 1
+MatrÃ­culas despuÃ©s: 1
+Tiempo de recuperaciÃ³n: 7.38 s
+Datos persistieron: True
+Resultado: cambiÃ³ el Pod, pero el PVC conservÃ³ los datos.

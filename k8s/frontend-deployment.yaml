@@ -5,6 +5,12 @@ metadata:
   namespace: unsa-matricula
 spec:
   replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: frontend
@@ -15,7 +21,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: unsa-matricula-frontend:v2
+          image: unsa-matricula-frontend:demo-v1.2.1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
@@ -38,3 +44,9 @@ spec:
               port: 80
             initialDelaySeconds: 10
             periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5

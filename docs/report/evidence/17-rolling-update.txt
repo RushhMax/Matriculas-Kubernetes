@@ -1,0 +1,11 @@
+﻿Fecha: 2026-09-30 02:33:22 -05:00
+
+Imagen inicial: unsa-matricula-backend:demo-v1.1.0
+Rolling update: Waiting for deployment "backend" rollout to finish: 1 out of 2 new replicas have been updated... Waiting for deployment "backend" rollout to finish: 1 out of 2 new replicas have been updated... Waiting for deployment "backend" rollout to finish: 1 out of 2 new replicas have been updated... Waiting for deployment "backend" rollout to finish: 1 old replicas are pending termination... Waiting for deployment "backend" rollout to finish: 1 old replicas are pending termination... deployment "backend" successfully rolled out
+Imagen actualizada: unsa-matricula-backend:demo-v1.2.0
+VersiÃ³n reportada: demo-v1.2.0
+Rollback: Waiting for deployment "backend" rollout to finish: 1 out of 2 new replicas have been updated... Waiting for deployment "backend" rollout to finish: 1 out of 2 new replicas have been updated... Waiting for deployment "backend" rollout to finish: 1 out of 2 new replicas have been updated... Waiting for deployment "backend" rollout to finish: 1 old replicas are pending termination... Waiting for deployment "backend" rollout to finish: 1 old replicas are pending termination... deployment "backend" successfully rolled out
+Imagen restaurada: unsa-matricula-backend:demo-v1.1.0
+Imagen final: unsa-matricula-backend:demo-v1.2.0
+VersiÃ³n final: demo-v1.2.0
+Resultado: rolling update y rollback completados sin dejar el Deployment no disponible.

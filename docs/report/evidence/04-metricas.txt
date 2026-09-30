@@ -1,0 +1,10 @@
+﻿Evidencia: 04-metricas
+Fecha: 2026-09-30 03:18:17 -05:00
+
+NAME                       CPU(cores)   MEMORY(bytes)   
+backend-5bf775555c-jf4v8   2m           22Mi            
+backend-5bf775555c-zglrb   1m           23Mi            
+frontend-bc75d8c68-7l4s9   1m           12Mi            
+postgres-0                 7m           28Mi            
+redis-77d6d984f5-tjm4t     9m           11Mi            
+

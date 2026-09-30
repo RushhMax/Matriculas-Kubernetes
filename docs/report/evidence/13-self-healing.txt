@@ -1,0 +1,8 @@
+﻿Fecha: 2026-09-30 02:39:43 -05:00
+
+Experimento: eliminaciÃ³n manual de un Pod backend
+Pod eliminado: backend-5bf775555c-jx4cp
+Pods antes: backend-5bf775555c-jx4cp, backend-5bf775555c-zglrb
+Pods despuÃ©s: backend-5bf775555c-jf4v8, backend-5bf775555c-zglrb
+Tiempo hasta Deployment disponible: 31.18 s
+Resultado: Kubernetes restaurÃ³ automÃ¡ticamente el estado deseado.

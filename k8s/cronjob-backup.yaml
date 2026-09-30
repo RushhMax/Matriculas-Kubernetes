@@ -5,17 +5,26 @@ metadata:
   namespace: unsa-matricula
 spec:
   schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3
   failedJobsHistoryLimit: 1
   jobTemplate:
     spec:
       template:
+        metadata:
+          labels:
+            app: postgres-backup
         spec:
           restartPolicy: OnFailure
           containers:
             - name: pg-backup
               image: postgres:15-alpine
               env:
+                - name: DB_USER
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-credentials
+                      key: DB_USER
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
@@ -25,6 +34,15 @@ spec:
                 - sh
                 - -c
                 - |
+                  set -eu
                   FILENAME="backup-$(date +%Y%m%d-%H%M%S).sql"
-                  pg_dump -h postgres-service -U matricula -d matricula > /tmp/$FILENAME
-                  echo "Backup completado: $FILENAME ($(wc -c < /tmp/$FILENAME) bytes)"
+                  pg_dump -h postgres-service -U "$DB_USER" -d matricula > "/backups/$FILENAME"
+                  echo "Backup persistente: $FILENAME ($(wc -c < "/backups/$FILENAME") bytes)"
+                  ls -1t /backups/backup-*.sql 2>/dev/null | tail -n +11 | xargs -r rm -f
+              volumeMounts:
+                - name: backup-storage
+                  mountPath: /backups
+          volumes:
+            - name: backup-storage
+              persistentVolumeClaim:
+                claimName: postgres-backups-pvc

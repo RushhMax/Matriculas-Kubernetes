@@ -1,0 +1,156 @@
+{
+    "metrics": {
+        "iteration_duration": {
+            "med": 697.5533,
+            "max": 3379.637,
+            "p(90)": 1505.2881000000002,
+            "p(95)": 1765.06918,
+            "avg": 804.0498192524243,
+            "min": 134.6803
+        },
+        "http_reqs": {
+            "rate": 154.68732530196505,
+            "count": 21670
+        },
+        "http_req_blocked": {
+            "avg": 0.016857226580526068,
+            "min": 0,
+            "med": 0,
+            "max": 21.96,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_tls_handshaking": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "iterations": {
+            "count": 10835,
+            "rate": 77.34366265098252
+        },
+        "vus_max": {
+            "value": 120,
+            "min": 120,
+            "max": 120
+        },
+        "data_sent": {
+            "count": 1679425,
+            "rate": 11988.26771090229
+        },
+        "http_req_connecting": {
+            "avg": 0.008256746654360873,
+            "min": 0,
+            "med": 0,
+            "max": 6.1885,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "http_req_sending": {
+            "min": 0,
+            "med": 0,
+            "max": 26.6866,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0.029973590216889702
+        },
+        "http_req_receiving": {
+            "med": 0,
+            "max": 15.1619,
+            "p(90)": 0.7419800000000017,
+            "p(95)": 1.0126,
+            "avg": 0.1998740009229341,
+            "min": 0
+        },
+        "vus": {
+            "value": 1,
+            "min": 1,
+            "max": 119
+        },
+        "http_req_duration{expected_response:true}": {
+            "p(95)": 1060.36058,
+            "avg": 351.45948283341176,
+            "min": 0.9972,
+            "med": 242.7043,
+            "max": 1769.5372,
+            "p(90)": 842.7611700000009
+        },
+        "api_latency_ms": {
+            "avg": 351.45948283341176,
+            "min": 0.9972,
+            "med": 242.7043,
+            "max": 1769.5372,
+            "p(90)": 842.7611700000009,
+            "p(95)": 1060.36058
+        },
+        "data_received": {
+            "count": 29214027,
+            "rate": 208538.980061347
+        },
+        "request_success_rate": {
+            "passes": 21670,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.95": false
+            },
+            "value": 1
+        },
+        "http_req_duration": {
+            "avg": 351.45948283341176,
+            "min": 0.9972,
+            "med": 242.7043,
+            "max": 1769.5372,
+            "p(90)": 842.7611700000009,
+            "p(95)": 1060.36058,
+            "thresholds": {
+                "p(95)<3000": false
+            }
+        },
+        "http_req_waiting": {
+            "avg": 351.2296352422724,
+            "min": 0.9972,
+            "med": 242.67849999999999,
+            "max": 1769.0006,
+            "p(90)": 842.7611700000009,
+            "p(95)": 1059.93574
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 21670,
+            "thresholds": {
+                "rate<0.05": false
+            },
+            "value": 0
+        },
+        "checks": {
+            "passes": 21670,
+            "fails": 0,
+            "value": 1
+        }
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {},
+        "checks": {
+                "load responde 200": {
+                    "id": "2930e65f578479b516cf8de245d5d25e",
+                    "passes": 10835,
+                    "fails": 0,
+                    "name": "load responde 200",
+                    "path": "::load responde 200"
+                },
+                "courses responde 200": {
+                    "name": "courses responde 200",
+                    "path": "::courses responde 200",
+                    "id": "44d3701ab8d0290faa9866e0af412a05",
+                    "passes": 10835,
+                    "fails": 0
+                }
+            }
+    }
+}

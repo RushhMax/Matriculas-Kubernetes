@@ -1,0 +1,10 @@
+﻿Evidencia: 18-network-policies
+Fecha: 2026-09-30 03:18:18 -05:00
+
+NAME                        POD-SELECTOR              AGE
+allow-backend-to-data       app in (postgres,redis)   20m
+allow-backup-to-postgres    app=postgres              20m
+allow-frontend-to-backend   app=backend               20m
+allow-traefik-to-frontend   app=frontend              20m
+default-deny-ingress        <none>                    20m
+
