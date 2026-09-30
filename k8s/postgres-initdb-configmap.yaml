@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-initdb
+  namespace: unsa-matricula
+data:
+  01-schema.sql: |
+    CREATE TABLE IF NOT EXISTS students (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(20) UNIQUE NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100),
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS courses (
+        id SERIAL PRIMARY KEY,
+        code VARCHAR(20) UNIQUE NOT NULL,
+        name VARCHAR(150) NOT NULL,
+        teacher VARCHAR(100),
+        credits INTEGER DEFAULT 4,
+        capacity INTEGER NOT NULL,
+        available_slots INTEGER NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS enrollments (
+        id SERIAL PRIMARY KEY,
+        student_id INTEGER REFERENCES students(id),
+        course_id  INTEGER REFERENCES courses(id),
+        enrolled_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(student_id, course_id)
+    );
+
+  02-seed.sql: |
+    INSERT INTO students (code, name, email) VALUES
+    ('20201001','Andrea Mamani Quispe','a.mamani@unsa.edu.pe'),
+    ('20201002','Carlos Huanca Flores','c.huanca@unsa.edu.pe'),
+    ('20201003','Daniela Ramos Callata','d.ramos@unsa.edu.pe'),
+    ('20201004','Ernesto Condori Vilca','e.condori@unsa.edu.pe'),
+    ('20201005','Fatima Torres Lazo','f.torres@unsa.edu.pe'),
+    ('20201006','Gabriel Quispe Turpo','g.quispe@unsa.edu.pe'),
+    ('20201007','Hilda Vargas Apaza','h.vargas@unsa.edu.pe'),
+    ('20201008','Ivan Calisaya Mamani','i.calisaya@unsa.edu.pe'),
+    ('20201009','Julia Lupaca Chura','j.lupaca@unsa.edu.pe'),
+    ('20201010','Kevin Pari Coaquira','k.pari@unsa.edu.pe'),
+    ('20201011','Laura Ccopa Huayhua','l.ccopa@unsa.edu.pe'),
+    ('20201012','Miguel Aro Catacora','m.aro@unsa.edu.pe'),
+    ('20201013','Natalia Adco Inquilla','n.adco@unsa.edu.pe'),
+    ('20201014','Oscar Tito Canaza','o.tito@unsa.edu.pe'),
+    ('20201015','Patricia Chura Mamani','p.chura@unsa.edu.pe'),
+    ('20201016','Raul Zavalaga Garcia','r.zavalaga@unsa.edu.pe'),
+    ('20201017','Sandra Llanos Benavides','s.llanos@unsa.edu.pe'),
+    ('20201018','Tomas Cutipa Flores','t.cutipa@unsa.edu.pe'),
+    ('20201019','Ursula Hancco Pilco','u.hancco@unsa.edu.pe'),
+    ('20201020','Victor Coila Puma','v.coila@unsa.edu.pe')
+    ON CONFLICT (code) DO NOTHING;
+
+    INSERT INTO courses (code, name, teacher, credits, capacity, available_slots) VALUES
+    ('CS101','Cloud Computing','Dr. Ramos Flores',4,30,30),
+    ('CS102','Arquitectura de Software','Mg. Torres Lazo',4,25,25),
+    ('CS103','Sistemas Distribuidos','Dr. Condori Mamani',4,20,20),
+    ('CS104','Seguridad Informatica','Mg. Huanca Quispe',4,35,35),
+    ('CS105','Inteligencia Artificial','Dr. Vargas Apaza',4,30,30),
+    ('CS106','Base de Datos Avanzadas','Mg. Calisaya Turpo',4,25,25),
+    ('CS107','Redes de Computadoras','Dr. Lupaca Flores',4,30,30),
+    ('CS108','Programacion Funcional','Mg. Pari Coaquira',3,20,20),
+    ('CS109','Compiladores','Dr. Ccopa Vilca',4,15,5),
+    ('CS110','Topicos en Machine Learning','Dr. Aro Chura',4,15,3),
+    ('CS111','Ingenieria de Software','Mg. Adco Mamani',4,40,40),
+    ('CS112','Computacion Paralela','Dr. Tito Flores',4,20,20),
+    ('CS113','Procesamiento de Imagenes','Mg. Llanos Catacora',3,20,20),
+    ('CS114','Auditoria de Sistemas','Mg. Cutipa Garcia',3,30,30),
+    ('CS115','Seminario de Tesis','Dr. Hancco Pilco',2,50,50)
+    ON CONFLICT (code) DO NOTHING;

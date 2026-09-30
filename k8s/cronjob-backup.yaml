@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: unsa-matricula
+spec:
+  schedule: "*/5 * * * *"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: pg-backup
+              image: postgres:15-alpine
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db-credentials
+                      key: DB_PASSWORD
+              command:
+                - sh
+                - -c
+                - |
+                  FILENAME="backup-$(date +%Y%m%d-%H%M%S).sql"
+                  pg_dump -h postgres-service -U matricula -d matricula > /tmp/$FILENAME
+                  echo "Backup completado: $FILENAME ($(wc -c < /tmp/$FILENAME) bytes)"

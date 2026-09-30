@@ -1,0 +1,26 @@
+# Dependencias
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Variables de entorno (contienen credenciales)
+.env
+backend/.env
+
+# Build outputs
+frontend/dist/
+
+# Archivos temporales del proyecto
+*.tar
+metrics-server-patch.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editores
+.vscode/
+.idea/
+*.swp
+*.swo

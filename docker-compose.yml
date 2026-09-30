@@ -1,0 +1,65 @@
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "80:80"
+    environment:
+      BACKEND_URL: http://backend:3000
+    depends_on:
+      - backend
+    networks:
+      - app-net
+
+  backend:
+    build: ./backend
+    ports:
+      - "3000:3000"
+    environment:
+      DB_HOST:     postgres
+      DB_PORT:     5432
+      DB_USER:     matricula
+      DB_PASSWORD: matricula123
+      DB_NAME:     matricula
+      REDIS_HOST:  redis
+      REDIS_PORT:  6379
+      PORT:        3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - app-net
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER:     matricula
+      POSTGRES_PASSWORD: matricula123
+      POSTGRES_DB:       matricula
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U matricula"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - app-net
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  app-net:
+    driver: bridge
