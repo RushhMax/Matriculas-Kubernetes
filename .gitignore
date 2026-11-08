@@ -44,3 +44,10 @@ override.tf.json
 *.key
 aws_creds.sh
 .aws_creds.sh
+
+# Reportes generados de CI y pruebas
+**/coverage/
+**/reports/
+artifacts/
+__pycache__/
+k8s/overlays/.release-*/

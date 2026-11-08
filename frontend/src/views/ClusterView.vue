@@ -100,9 +100,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { getCourses, generateCpuLoad } from '../api/index.js';
-import { useAuth } from '../composables/useAuth.js';
-
-const auth         = useAuth();
 const route        = useRoute();
 const log          = ref([]);
 const totalRequests = ref(0);
