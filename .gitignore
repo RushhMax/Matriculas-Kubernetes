@@ -24,3 +24,23 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Credenciales
+.env
+.env.local
+*.pem
+*.ppk
+*.key
+aws_creds.sh
+.aws_creds.sh

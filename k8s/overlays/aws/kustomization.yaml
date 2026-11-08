@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../
+
+namespace: unsa-matricula
+
+images:
+  - name: unsa-matricula-backend
+    newName: 455290382075.dkr.ecr.us-east-1.amazonaws.com/unsa-matricula-backend
+    newTag: latest
+  - name: unsa-matricula-frontend
+    newName: 455290382075.dkr.ecr.us-east-1.amazonaws.com/unsa-matricula-frontend
+    newTag: latest
+
+patches:
+  - path: ingress-patch.yaml
