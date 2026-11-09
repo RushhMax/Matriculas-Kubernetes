@@ -10,9 +10,10 @@ terraform {
 
   # Backend remoto en S3 para el state
   backend "s3" {
-    bucket = "unsa-matricula-terraform-state-455290382075"
-    key    = "foundation/terraform.tfstate"
-    region = "us-east-1"
+  bucket       = "unsa-matricula-terraform-state-455290382075"
+  key          = "foundation/terraform.tfstate"
+  region       = "us-east-1"
+  use_lockfile = true
   }
 }
 
