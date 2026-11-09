@@ -1,0 +1,5 @@
+aws_region            = "us-east-1"
+subnet_id             = "subnet-00ad2e99464247a23"
+instance_profile_name = "LabInstanceProfile"
+instance_type         = "t3.medium"
+allowed_http_cidr     = "190.237.242.141/32"

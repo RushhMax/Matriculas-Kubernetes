@@ -1,0 +1,36 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+  - ingress.yaml
+
+namespace: unsa-matricula
+
+images:
+  - name: unsa-matricula-backend
+    newName: $AccountId.dkr.ecr.$Region.amazonaws.com/unsa-matricula-backend
+    newTag: $ImageTag
+
+  - name: unsa-matricula-frontend
+    newName: $AccountId.dkr.ecr.$Region.amazonaws.com/unsa-matricula-frontend
+    newTag: $ImageTag
+
+patches:
+  - target:
+      kind: Deployment
+      name: backend
+    patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          - name: ecr-pull
+
+  - target:
+      kind: Deployment
+      name: frontend
+    patch: |-
+      - op: add
+        path: /spec/template/spec/imagePullSecrets
+        value:
+          - name: ecr-pull
