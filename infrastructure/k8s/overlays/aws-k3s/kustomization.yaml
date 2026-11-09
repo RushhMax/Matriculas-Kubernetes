@@ -9,12 +9,12 @@ namespace: unsa-matricula
 
 images:
   - name: unsa-matricula-backend
-    newName: $AccountId.dkr.ecr.$Region.amazonaws.com/unsa-matricula-backend
-    newTag: $ImageTag
+    newName: 455290382075.dkr.ecr.us-east-1.amazonaws.com/unsa-matricula-backend
+    newTag: f8b204aa55aee5d331863ade0a9bdf7289388070
 
   - name: unsa-matricula-frontend
-    newName: $AccountId.dkr.ecr.$Region.amazonaws.com/unsa-matricula-frontend
-    newTag: $ImageTag
+    newName: 455290382075.dkr.ecr.us-east-1.amazonaws.com/unsa-matricula-frontend
+    newTag: f8b204aa55aee5d331863ade0a9bdf7289388070
 
 patches:
   - target:
@@ -34,3 +34,4 @@ patches:
         path: /spec/template/spec/imagePullSecrets
         value:
           - name: ecr-pull
+
