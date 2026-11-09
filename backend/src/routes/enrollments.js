@@ -11,8 +11,9 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: 'student_id and course_id are required', served_by: POD });
   }
 
-  const client = await pool.connect();
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
 
     const courseRes = await client.query(
@@ -71,10 +72,10 @@ router.post('/', async (req, res) => {
       served_by: POD,
     });
   } catch (err) {
-    await client.query('ROLLBACK').catch(() => {});
+    if (client) await client.query('ROLLBACK').catch(() => {});
     res.status(500).json({ error: err.message, served_by: POD });
   } finally {
-    client.release();
+    if (client) client.release();
   }
 });
 

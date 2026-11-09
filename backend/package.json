@@ -4,7 +4,11 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "lint": "eslint . --max-warnings=0",
+    "test": "npm run test:unit",
+    "test:unit": "jest --runInBand --coverage",
+    "test:integration": "jest --config jest.integration.config.cjs --runInBand"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -14,6 +18,15 @@
     "pg": "^8.11.3"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.14.0",
+    "globals": "^16.5.0",
+    "jest": "^30.5.2",
+    "jest-junit": "^16.0.0",
+    "nodemon": "^3.0.1",
+    "supertest": "^7.3.2"
+  },
+  "engines": {
+    "node": ">=22.14.0"
   }
 }

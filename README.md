@@ -3,6 +3,9 @@
 Sistema de matrícula universitario escalable desplegado sobre Kubernetes.
 Escenario hipotético inspirado en la UNSA — Cloud Computing S10.
 
+Para calidad, publicación de imágenes en ECR y configuración de GitHub Actions,
+consulta la [guía de Persona 2](docs/PERSONA2_CICD_ECR.md).
+
 ## Componentes
 
 | Servicio   | Tecnología        | Puerto |
