@@ -5,3 +5,4 @@ resources:
   - configmap.yaml
   - namespace.yaml
   - postgres-initdb-configmap.yaml
+
