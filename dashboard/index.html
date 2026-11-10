@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UNSA Matrícula · Cloud Dashboard</title>
+<style>
+:root{--bg:#0f1420;--card:#171e2e;--bd:#263049;--tx:#e6ebf5;--mu:#8a96b2;--ac:#4f9cff;--ok:#3ecf8e;--wa:#f5b13d;--er:#ef5b5b;--pu:#a78bfa}
+@media (prefers-color-scheme:light){:root{--bg:#f4f6fb;--card:#fff;--bd:#dde3ef;--tx:#1b2438;--mu:#66728f}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.5 system-ui,Segoe UI,sans-serif}
+header{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;gap:12px;align-items:center;flex-wrap:wrap;position:sticky;top:0;background:var(--bg);z-index:5}
+header h1{font-size:17px;margin:0;margin-right:auto}
+nav{display:flex;gap:4px;flex-wrap:wrap;padding:10px 20px 0}
+nav button{background:none;border:0;color:var(--mu);padding:8px 12px;border-radius:8px 8px 0 0;cursor:pointer;font:inherit}
+nav button.on{color:var(--tx);background:var(--card);border:1px solid var(--bd);border-bottom-color:var(--card)}
+main{padding:16px 20px 40px;max-width:1250px;margin:auto}
+section{display:none}section.on{display:block}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:14px}
+.card h3{margin:0 0 8px;font-size:13px;color:var(--mu);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.big{font-size:28px;font-weight:700}.mu{color:var(--mu)}.sm{font-size:12px}
+input,button.b,select{background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:7px 10px;font:inherit}
+button.b{cursor:pointer}button.b.p{background:var(--ac);border-color:var(--ac);color:#fff}button.b.d{background:var(--er);border-color:var(--er);color:#fff}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--bd)}th{color:var(--mu);font-weight:600}
+.tag{padding:1px 8px;border-radius:99px;font-size:12px;background:#0003}.ok{color:var(--ok)}.wa{color:var(--wa)}.er{color:var(--er)}
+.bar{height:10px;border-radius:5px;background:var(--bd);overflow:hidden}.bar>i{display:block;height:100%;background:var(--ac)}
+canvas{width:100%;height:170px;display:block}
+pre{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px;overflow:auto;font-size:12px;max-height:260px}
+textarea{width:100%;height:70px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px;font:12px monospace}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.pill{display:inline-flex;align-items:center;gap:6px}.dot{width:9px;height:9px;border-radius:50%;background:var(--mu)}.dot.ok{background:var(--ok)}.dot.er{background:var(--er)}
+svg text{fill:var(--tx);font-size:12px}svg .bx{fill:var(--card);stroke:var(--bd)}svg .ln{stroke:var(--mu);fill:none}
+.step{display:flex;gap:10px;align-items:center;margin:6px 0}.step b{background:var(--ac);color:#fff;border-radius:50%;width:24px;height:24px;display:grid;place-items:center;font-size:12px;flex:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>☁️ UNSA Matrícula · Kubernetes en AWS</h1>
+  <span class="pill"><span class="dot" id="dApi"></span><span id="tApi" class="sm mu">API: sin conexión</span></span>
+  <span class="pill"><span class="dot" id="dBr"></span><span id="tBr" class="sm mu">Bridge: sin conexión</span></span>
+  <button class="b" onclick="showSetup()">⚙ Conexión</button>
+</header>
+<nav id="nav"></nav>
+<main>
+
+<!-- ================= EN VIVO ================= -->
+<section id="live">
+  <div class="grid">
+    <div class="card"><h3>Estado API</h3><div class="big" id="kStatus">—</div><div class="sm mu" id="kVer">versión —</div></div>
+    <div class="card"><h3>Latencia (último)</h3><div class="big" id="kLat">—</div><div class="sm mu">media <span id="kAvg">—</span> ms · p95 <span id="kP95">—</span> ms</div></div>
+    <div class="card"><h3>Pods que responden</h3><div class="big" id="kPods">—</div><div class="sm mu">Balanceo detectado por /health</div></div>
+    <div class="card"><h3>Peticiones / errores</h3><div class="big"><span id="kReq">0</span> / <span class="er" id="kErr">0</span></div><div class="sm mu" id="kRps">0 req/s</div></div>
+  </div>
+  <div class="grid" style="margin-top:14px">
+    <div class="card"><h3>Latencia en tiempo real (ms)</h3><canvas id="cLat"></canvas></div>
+    <div class="card"><h3>⚖ Balanceo de carga (peticiones por pod)</h3><div id="lb"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>🔥 Prueba de estrés desde el navegador (endpoint /load, CPU-bound → dispara el HPA)</h3>
+    <div class="row">
+      Concurrencia <input id="sVU" type="number" value="40" style="width:80px">
+      Duración (s) <input id="sDur" type="number" value="60" style="width:80px">
+      CPU ms <input id="sMs" type="number" value="30" style="width:70px">
+      <button class="b d" id="sGo" onclick="stress()">Iniciar estrés</button>
+      <button class="b" onclick="stopStress()">Detener</button>
+      <span class="sm mu" id="sInfo"></span>
+    </div>
+  </div>
+  <div class="grid" style="margin-top:14px">
+    <div class="card"><h3>HPA (réplicas backend)</h3><canvas id="cHpa"></canvas><div class="sm mu" id="hpaTxt">Necesita el bridge (⚙ Conexión)</div></div>
+    <div class="card"><h3>EC2 · CPU (CloudWatch, última hora)</h3><canvas id="cCw"></canvas><div class="sm mu" id="cwTxt">Necesita el bridge + Instance ID</div></div>
+  </div>
+</section>
+
+<!-- ================= CLUSTER ================= -->
+<section id="cluster">
+  <div class="grid">
+    <div class="card"><h3>Nodos</h3><div id="nodes" class="sm mu">Sin datos. Conecta el bridge o pega la salida de kubectl abajo.</div></div>
+    <div class="card"><h3>HPA</h3><div id="hpas" class="sm mu">—</div></div>
+    <div class="card"><h3>Deployments</h3><div id="deps" class="sm mu">—</div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Pods</h3><div id="pods" class="sm mu">—</div></div>
+  <div class="card" style="margin-top:14px"><h3>Alternativa sin bridge: pega aquí la salida de</h3>
+    <pre style="max-height:none">kubectl get pods,nodes,hpa,deploy -A -o json</pre>
+    <textarea id="paste" placeholder="Pega el JSON aquí"></textarea>
+    <div class="row" style="margin-top:6px"><button class="b p" onclick="try{renderK8s(JSON.parse(paste.value))}catch(e){alert('JSON inválido')}">Mostrar</button></div>
+  </div>
+</section>
+
+<!-- ================= ARQUITECTURA ================= -->
+<section id="arch">
+  <div class="card">
+  <h3>Arquitectura desplegada (AWS EC2 + k3s)</h3>
+  <svg viewBox="0 0 900 430" width="100%">
+    <rect class="bx" x="10" y="10" width="880" height="410" rx="12" stroke-dasharray="6"/><text x="22" y="30">AWS · us-east-1 · VPC / subred pública · Security Group (80 solo IP autorizada)</text>
+    <rect class="bx" x="30" y="150" width="90" height="50" rx="8"/><text x="48" y="180">Usuario</text>
+    <rect class="bx" x="150" y="45" width="720" height="360" rx="10"/><text x="162" y="65">EC2 t3.medium · Amazon Linux 2023 · k3s (gp3 30GB cifrado) · acceso por SSM</text>
+    <rect class="bx" x="170" y="140" width="110" height="70" rx="8"/><text x="188" y="170">Traefik</text><text x="180" y="188">Ingress :80</text>
+    <rect class="bx" x="310" y="85" width="140" height="60" rx="8"/><text x="326" y="112">Frontend (Vue)</text><text x="326" y="130">nginx · Deployment</text>
+    <rect class="bx" x="310" y="185" width="140" height="95" rx="8"/><text x="326" y="210">Backend (Node)</text><text x="326" y="228">Express · 2–5 pods</text><text x="326" y="246">HPA CPU 50%</text><text x="326" y="264">/health /ready /load</text>
+    <rect class="bx" x="500" y="150" width="150" height="60" rx="8"/><text x="520" y="175">PostgreSQL</text><text x="520" y="193">StatefulSet + PVC</text>
+    <rect class="bx" x="500" y="235" width="150" height="50" rx="8"/><text x="520" y="258">Redis (caché)</text>
+    <rect class="bx" x="690" y="150" width="160" height="60" rx="8"/><text x="706" y="175">CronJob backup</text><text x="706" y="193">pg_dump → PVC</text>
+    <rect class="bx" x="170" y="320" width="320" height="60" rx="8"/><text x="186" y="345">NetworkPolicies: default-deny +</text><text x="186" y="363">allow traefik→front→back→data</text>
+    <rect class="bx" x="520" y="320" width="330" height="60" rx="8"/><text x="536" y="345">Observabilidad: Prometheus + Grafana</text><text x="536" y="363">(observability/values.yaml)</text>
+    <path class="ln" d="M120 175H170M280 160L310 115M280 185L310 225M450 235L500 185M450 250L500 260M650 180H690"/>
+    <rect class="bx" x="30" y="300" width="100" height="50" rx="8"/><text x="42" y="322">GitHub CI</text><text x="42" y="340">→ ECR/GHCR</text>
+    <path class="ln" d="M130 325H170" stroke-dasharray="4"/>
+  </svg>
+  </div>
+  <div class="grid" style="margin-top:14px">
+    <div class="card"><h3>Infraestructura como código</h3><ul><li><b>Terraform</b>: EC2 + SG + k3s por user-data (<code>infrastructure/infrastructure/k3s</code>)</li><li>State remoto en S3 (<code>unsa-matricula-terraform-state-…</code>)</li><li>Módulos ECR / VPC / EKS alternativos (<code>infrastructure/modules</code>)</li></ul></div>
+    <div class="card"><h3>Kubernetes</h3><ul><li>Kustomize: <code>base</code> + overlay <code>aws-k3s</code> (imágenes ECR, <code>imagePullSecrets</code>)</li><li>Probes liveness/readiness, PVC para Postgres y backups</li><li>Namespace <code>unsa-matricula</code></li></ul></div>
+    <div class="card"><h3>Aplicación</h3><ul><li>Vue 3 + Vite (frontend)</li><li>Node/Express + pg + Redis (backend)</li><li>PostgreSQL con schema y seed</li><li>Endpoints demo: <code>/load</code>, <code>/demo/fail-health</code></li></ul></div>
+  </div>
+</section>
+
+<!-- ================= RENDIMIENTO ================= -->
+<section id="perf">
+  <div class="grid">
+    <div class="card"><h3>k6 · Peticiones</h3><div class="big">21 670</div><div class="sm mu">154.7 req/s · 120 VUs máx · 2m20s</div></div>
+    <div class="card"><h3>Latencia p95</h3><div class="big">1 060 ms</div><div class="sm mu">media 351 ms · mediana 243 ms · máx 1 770 ms</div></div>
+    <div class="card"><h3>Errores</h3><div class="big ok">0 %</div><div class="sm mu">21 670 / 21 670 correctas (umbral &lt;5 %)</div></div>
+    <div class="card"><h3>Escalado HPA</h3><div class="big">2 → 5 pods</div><div class="sm mu">CPU pico 495 % del request · estable en ~10 s</div></div>
+  </div>
+  <div class="grid" style="margin-top:14px">
+    <div class="card"><h3>Experimento HPA · réplicas (azul) y CPU % (naranja)</h3><canvas id="cExp" style="height:230px"></canvas><div class="sm mu">Datos reales: docs/report/evidence/11-hpa-timeline.csv</div></div>
+    <div class="card"><h3>Escenario k6 (estrés)</h3><table><tr><th>Etapa</th><th>Duración</th><th>VUs</th></tr><tr><td>1</td><td>20 s</td><td>0→30</td></tr><tr><td>2</td><td>40 s</td><td>→60</td></tr><tr><td>3</td><td>60 s</td><td>→120</td></tr><tr><td>4</td><td>20 s</td><td>→0</td></tr></table>
+      <p class="sm mu">Cada iteración llama a <code>/load?ms=30</code> y <code>/courses</code>.</p>
+      <pre>k6 run -e BASE_URL=http://&lt;IP_EC2&gt;/api -e MAX_VUS=120 load-tests/k6.js</pre></div>
+  </div>
+</section>
+
+<!-- ================= RESILIENCIA ================= -->
+<section id="res">
+  <div class="grid">
+    <div class="card"><h3>Self-healing</h3><div class="big">31 s</div><div class="sm mu">Se eliminó un pod backend; Kubernetes recreó el estado deseado (2 réplicas).</div></div>
+    <div class="card"><h3>Rolling update + rollback</h3><div class="big ok">0 downtime</div><div class="sm mu">demo-v1.1.0 → v1.2.0 → rollback, Deployment siempre disponible.</div></div>
+    <div class="card"><h3>Liveness</h3><div class="big">Auto-restart</div><div class="sm mu"><code>POST /demo/fail-health</code> deja /health en 500 y el pod se reinicia.</div></div>
+    <div class="card"><h3>Persistencia y backup</h3><div class="big">PVC + CronJob</div><div class="sm mu">Datos sobreviven a borrar el pod de Postgres; backup pg_dump programado.</div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Network Policies</h3>
+    <table><tr><th>Política</th><th>Selector</th></tr><tr><td>default-deny-ingress</td><td>todos</td></tr><tr><td>allow-traefik-to-frontend</td><td>app=frontend</td></tr><tr><td>allow-frontend-to-backend</td><td>app=backend</td></tr><tr><td>allow-backend-to-data</td><td>app in (postgres, redis)</td></tr><tr><td>allow-backup-to-postgres</td><td>app=postgres</td></tr></table></div>
+  <div class="card" style="margin-top:14px"><h3>Probar self-healing en vivo</h3>
+    <div class="row"><button class="b d" onclick="failHealth()">Poner este pod en unhealthy</button><span class="sm mu" id="failTxt">Envía POST /demo/fail-health a un pod (el balanceador elige cuál) y mira cómo se reinicia en la pestaña En vivo / Clúster.</span></div></div>
+</section>
+
+<!-- ================= PIPELINE ================= -->
+<section id="pipe">
+  <div class="grid">
+    <div class="card"><h3>GitHub Actions · validate</h3>
+      <div class="step"><b>1</b>npm ci + chequeo de sintaxis backend</div>
+      <div class="step"><b>2</b>Build de producción del frontend (Vite)</div>
+      <div class="step"><b>3</b>Validar docker-compose</div>
+      <div class="step"><b>4</b>Build de contenedores</div></div>
+    <div class="card"><h3>publish (solo en push)</h3>
+      <div class="step"><b>5</b>Login al registry (GHCR / ECR)</div>
+      <div class="step"><b>6</b>Build &amp; push matriz [backend, frontend]</div>
+      <div class="step"><b>7</b>Tag = SHA del commit</div></div>
+    <div class="card"><h3>Despliegue</h3>
+      <div class="step"><b>8</b>terraform apply → EC2 + k3s</div>
+      <div class="step"><b>9</b>Secret <code>ecr-pull</code> + <code>kubectl apply -k overlays/aws-k3s</code></div>
+      <div class="step"><b>10</b>Rollout, HPA e Ingress activos</div></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Ramas del repositorio</h3><div class="sm">feature/infrastructure-aws · feature/aws-k3s · feature/aws-verification · feature/persona2-cicd-ecr · feature/terraform-state-security</div></div>
+</section>
+
+<!-- ================= COMANDOS ================= -->
+<section id="cmd">
+  <div class="card"><h3>Guía rápida para correr todo</h3>
+<pre>
+# 1) Credenciales AWS (Learner Lab → AWS Details → AWS CLI) en ~/.aws/credentials
+aws sts get-caller-identity
+
+# 2) Infraestructura
+cd infrastructure/infrastructure/k3s
+terraform init &amp;&amp; terraform apply          # ajusta allowed_http_cidr a tu IP /32
+
+# 3) Despliegue (en la EC2 por SSM, o con kubeconfig local)
+kubectl apply -k infrastructure/k8s/overlays/aws-k3s
+
+# 4) Verificar
+kubectl -n unsa-matricula get pods,hpa,svc,ingress
+
+# 5) Este dashboard: botón ⚙ Conexión → descargar bridge.py y ejecutarlo
+python3 bridge.py
+</pre></div>
+</section>
+</main>
+
+<!-- Modal conexión -->
+<dialog id="dlg" style="background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:12px;max-width:640px;width:92%">
+  <h3 style="margin-top:0">Conexión</h3>
+  <p class="sm mu">URL base de la API (Ingress). Ej: <code>http://IP_EC2/api</code>, <code>http://localhost/api</code> o <code>http://localhost:3000</code> (docker compose).</p>
+  <input id="iApi" style="width:100%" placeholder="http://IP_EC2/api">
+  <p class="sm mu">Bridge local (opcional; da pods, nodos, HPA y CloudWatch reales):</p>
+  <input id="iBr" style="width:100%" value="http://localhost:8765">
+  <p class="sm mu">Instance ID de la EC2 (para métricas CloudWatch):</p>
+  <input id="iEc2" style="width:100%" placeholder="i-0abc123...">
+  <p class="sm">El bridge usa <b>tu</b> kubectl y aws CLI ya configurados; el dashboard no guarda credenciales.</p>
+  <div class="row"><button class="b" onclick="dlBridge()">⬇ Descargar bridge.py</button><button class="b" onclick="demoData()">Cargar datos de ejemplo</button><span style="margin-left:auto"></span><button class="b p" onclick="saveCfg()">Guardar</button></div>
+</dialog>
+
+<script type="text/plain" id="bridge">
+#!/usr/bin/env python3
+# Bridge local (solo lectura) para el dashboard. Requiere aws CLI con credenciales vigentes.
+# Estado del clúster: entra a la EC2 por SSM (no abre puertos). USE_LOCAL_KUBECTL=1 fuerza el kubectl local.
+# Uso: python3 bridge.py     (opcional: INSTANCE_ID=i-xxxx python3 bridge.py)
+import json, subprocess, datetime, os, shutil, base64, time, threading
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from urllib.parse import urlparse, parse_qs
+
+REGION = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
+def run(cmd, timeout=40):
+    r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    return r.returncode, r.stdout, r.stderr
+def aws(*a):
+    c, o, e = run(["aws", "--region", REGION, *a, "--output", "json"])
+    if c: raise RuntimeError(e.strip()[:300])
+    return json.loads(o or "null")
+
+INFO = {}
+def discover():
+    iid = os.environ.get("INSTANCE_ID")
+    q = [["--instance-ids", iid]] if iid else [["--filters", "Name=tag:Name,Values=unsa-matricula-k3s-dev", "Name=instance-state-name,Values=running"]]
+    r = aws("ec2", "describe-instances", *q[0])
+    i = r["Reservations"][0]["Instances"][0]
+    INFO.update(id=i["InstanceId"], ip=i.get("PublicIpAddress"), state=i["State"]["Name"])
+
+TRIM = """import sys,json
+d=json.load(sys.stdin);o=[]
+for x in d['items']:
+    if x['kind']!='Node' and x['metadata'].get('namespace')!='unsa-matricula' and not (x['kind']=='Pod' and x['metadata'].get('namespace')=='kube-system'): continue
+    if x['kind']=='Pod' and x.get('status',{}).get('phase')=='Succeeded': continue
+    m=x['metadata'];s=x.get('spec',{});t=x.get('status',{})
+    o.append({'kind':x['kind'],'metadata':{k:m.get(k) for k in('namespace','name','creationTimestamp')},
+     'spec':{k:s[k] for k in('nodeName','minReplicas','maxReplicas','metrics','replicas') if k in s},
+     'status':{'phase':t.get('phase'),'containerStatuses':[{'ready':c['ready'],'restartCount':c['restartCount']} for c in t.get('containerStatuses',[])],
+      'conditions':t.get('conditions'),'allocatable':t.get('allocatable'),'nodeInfo':t.get('nodeInfo'),
+      **{k:t[k] for k in('currentReplicas','desiredReplicas','currentMetrics','readyReplicas','updatedReplicas') if k in t}}})
+print(json.dumps({'items':o},separators=(',',':')))"""
+REMOTE = ("export KUBECONFIG=/etc/rancher/k3s/k3s.yaml; k3s kubectl get pods,nodes,hpa,deploy -A -o json | python3 -c \"$(echo %s | base64 -d)\""
+          % base64.b64encode(TRIM.encode()).decode())
+
+def k8s_local():
+    if not shutil.which("kubectl"): raise RuntimeError("sin kubectl")
+    c, o, e = run(["kubectl", "get", "pods,nodes,hpa,deploy", "-A", "-o", "json"], 15)
+    if c: raise RuntimeError(e)
+    return o
+def k8s_ssm():
+    cid = aws("ssm", "send-command", "--instance-ids", INFO["id"], "--document-name", "AWS-RunShellScript",
+              "--parameters", json.dumps({"commands": [REMOTE]}))["Command"]["CommandId"]
+    for _ in range(20):
+        time.sleep(1.5)
+        try:
+            r = aws("ssm", "get-command-invocation", "--command-id", cid, "--instance-id", INFO["id"])
+        except RuntimeError: continue
+        if r["Status"] == "Success": return r["StandardOutputContent"]
+        if r["Status"] in ("Failed", "Cancelled", "TimedOut"): raise RuntimeError(r["StandardErrorContent"][:300])
+    raise RuntimeError("SSM timeout")
+
+CACHE = {"k8s": json.dumps({"error": "cargando..."}), "mode": "?"}
+def refresher():
+    local_ok = os.environ.get("USE_LOCAL_KUBECTL") == "1"
+    while True:
+        try:
+            if not INFO: discover()
+            if local_ok:
+                try: CACHE["k8s"] = k8s_local(); CACHE["mode"] = "kubectl local"
+                except Exception: local_ok = False
+            if not local_ok:
+                CACHE["k8s"] = k8s_ssm(); CACHE["mode"] = "SSM"
+        except Exception as e:
+            CACHE["k8s"] = json.dumps({"error": str(e)})
+        time.sleep(2)
+
+def cw(instance, metric):
+    end = datetime.datetime.now(datetime.timezone.utc); start = end - datetime.timedelta(hours=1); f = "%Y-%m-%dT%H:%M:%SZ"
+    return aws("cloudwatch", "get-metric-statistics", "--namespace", "AWS/EC2", "--metric-name", metric,
+               "--dimensions", "Name=InstanceId,Value=" + instance, "--start-time", start.strftime(f),
+               "--end-time", end.strftime(f), "--period", "60", "--statistics", "Average")
+
+class H(BaseHTTPRequestHandler):
+    def do_GET(self):
+        u = urlparse(self.path); q = parse_qs(u.query)
+        try:
+            if u.path == "/k8s": body = CACHE["k8s"]
+            elif u.path == "/info": body = json.dumps({**INFO, "mode": CACHE["mode"]})
+            elif u.path == "/cw":
+                i = q.get("id", [INFO.get("id", "")])[0]
+                body = json.dumps({"cpu": cw(i, "CPUUtilization"), "netin": cw(i, "NetworkIn")})
+            else: body = json.dumps({"ok": True})
+        except Exception as e:
+            body = json.dumps({"error": str(e)})
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.end_headers(); self.wfile.write(body.encode())
+    def log_message(self, *a): pass
+
+threading.Thread(target=refresher, daemon=True).start()
+print("Bridge en http://localhost:8765  (Ctrl+C para salir)")
+ThreadingHTTPServer(("127.0.0.1", 8765), H).serve_forever()
+</script>
+
+<script>
+const $=id=>document.getElementById(id);
+const TABS=[["live","En vivo"],["cluster","Clúster"],["arch","Arquitectura"],["perf","Rendimiento"],["res","Resiliencia"],["pipe","Pipeline"],["cmd","Cómo correrlo"]];
+$("nav").innerHTML=TABS.map(t=>`<button data-t="${t[0]}">${t[1]}</button>`).join("");
+function tab(t){document.querySelectorAll("section").forEach(s=>s.classList.toggle("on",s.id===t));document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));try{localStorage.tab=t}catch(e){}if(t==="perf")drawExp()}
+$("nav").onclick=e=>{if(e.target.dataset.t)tab(e.target.dataset.t)};
+
+// ---- config
+let cfg={api:"",br:"http://localhost:8765",ec2:""};
+try{Object.assign(cfg,JSON.parse(localStorage.cfg||"{}"))}catch(e){}
+function showSetup(){$("iApi").value=cfg.api;$("iBr").value=cfg.br;$("iEc2").value=cfg.ec2;$("dlg").showModal()}
+function saveCfg(){cfg={api:$("iApi").value.trim().replace(/\/$/,""),br:$("iBr").value.trim().replace(/\/$/,""),ec2:$("iEc2").value.trim()};try{localStorage.cfg=JSON.stringify(cfg)}catch(e){}$("dlg").close();reset()}
+function dlBridge(){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([$("bridge").textContent],{type:"text/x-python"}));a.download="bridge.py";a.click()}
+
+// ---- charts
+function line(cv,series,opt={}){
+  const dpr=devicePixelRatio||1,w=cv.clientWidth,h=cv.clientHeight;cv.width=w*dpr;cv.height=h*dpr;
+  const c=cv.getContext("2d");c.scale(dpr,dpr);c.clearRect(0,0,w,h);
+  const st=getComputedStyle(document.body),mu=st.getPropertyValue("--mu"),bd=st.getPropertyValue("--bd");
+  const all=series.flatMap(s=>s.d);if(!all.length){c.fillStyle=mu;c.fillText("sin datos",10,20);return}
+  const max=opt.max||Math.max(...all,1)*1.15,n=Math.max(...series.map(s=>s.d.length)),pl=34,pb=16;
+  c.strokeStyle=bd;c.fillStyle=mu;c.font="11px sans-serif";
+  for(let i=0;i<=4;i++){const y=4+(h-pb-8)*i/4;c.beginPath();c.moveTo(pl,y);c.lineTo(w,y);c.stroke();c.fillText(Math.round(max*(1-i/4)),2,y+4)}
+  series.forEach(s=>{c.strokeStyle=s.c;c.lineWidth=2;c.beginPath();s.d.forEach((v,i)=>{const x=pl+(w-pl-4)*(n<2?0:i/(n-1)),y=4+(h-pb-8)*(1-v/max);i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke()});
+}
+const css=v=>getComputedStyle(document.body).getPropertyValue(v).trim();
+
+// ---- live health polling
+const S={lat:[],pods:{},req:0,err:0,times:[],stressOn:false};
+function reset(){S.lat=[];S.pods={};S.req=0;S.err=0;S.times=[];render()}
+async function poll(){
+  if(!cfg.api){$("tApi").textContent="API: configura ⚙ Conexión";return}
+  const t0=performance.now();
+  try{
+    const r=await fetch(cfg.api+"/health",{cache:"no-store"});const j=await r.json();const ms=performance.now()-t0;
+    S.req++;S.lat.push(ms);if(S.lat.length>90)S.lat.shift();S.times.push(Date.now());
+    S.pods[j.pod]=(S.pods[j.pod]||0)+1;
+    $("dApi").className="dot "+(r.ok?"ok":"er");$("tApi").textContent="API: "+(r.ok?"OK":"unhealthy")+" · "+j.pod;
+    $("kStatus").textContent=j.status;$("kStatus").className="big "+(r.ok?"ok":"er");$("kVer").textContent="versión "+j.version;
+    if(!r.ok)S.err++;
+  }catch(e){S.req++;S.err++;$("dApi").className="dot er";$("tApi").textContent="API: sin respuesta";$("kStatus").textContent="caída";$("kStatus").className="big er"}
+  render();
+}
+function render(){
+  const l=S.lat,avg=l.length?l.reduce((a,b)=>a+b,0)/l.length:0,srt=[...l].sort((a,b)=>a-b);
+  $("kLat").textContent=l.length?Math.round(l[l.length-1])+" ms":"—";$("kAvg").textContent=Math.round(avg);$("kP95").textContent=srt.length?Math.round(srt[Math.floor(srt.length*.95)]):0;
+  $("kReq").textContent=S.req;$("kErr").textContent=S.err;
+  const rec=S.times.filter(t=>Date.now()-t<10000).length;$("kRps").textContent=(rec/10).toFixed(1)+" req/s (health)";
+  const names=Object.keys(S.pods),tot=names.reduce((a,k)=>a+S.pods[k],0)||1;$("kPods").textContent=names.length;
+  $("lb").innerHTML=names.map(k=>`<div class="sm" style="margin-top:6px">${k} <span class="mu">· ${S.pods[k]} (${Math.round(S.pods[k]/tot*100)}%)</span></div><div class="bar"><i style="width:${S.pods[k]/tot*100}%"></i></div>`).join("")||'<span class="mu sm">Esperando respuestas…</span>';
+  line($("cLat"),[{d:l,c:css("--ac")}]);
+}
+setInterval(poll,1000);
+
+// ---- stress
+let stopFlag=false;
+async function stress(){
+  if(!cfg.api)return showSetup();
+  const vu=+$("sVU").value,dur=+$("sDur").value,ms=+$("sMs").value;stopFlag=false;$("sGo").disabled=true;
+  let ok=0,bad=0;const lats=[],pods={},end=Date.now()+dur*1000,t0=Date.now();
+  const tick=setInterval(()=>{const lt=[...lats].sort((a,b)=>a-b);$("sInfo").textContent=`${Math.round((Date.now()-t0)/1000)}s · ok ${ok} · err ${bad} · ${(ok/((Date.now()-t0)/1000)).toFixed(0)} req/s · p95 ${lt.length?Math.round(lt[Math.floor(lt.length*.95)]):0} ms · pods ${Object.keys(pods).length}`},500);
+  const worker=async()=>{while(Date.now()<end&&!stopFlag){const a=performance.now();try{const r=await fetch(`${cfg.api}/load?ms=${ms}`,{cache:"no-store"});const j=await r.json();r.ok?ok++:bad++;pods[j.served_by]=1;S.pods[j.served_by]=(S.pods[j.served_by]||0)+1}catch(e){bad++}lats.push(performance.now()-a);if(lats.length>5000)lats.shift()}};
+  await Promise.all(Array.from({length:vu},worker));clearInterval(tick);$("sGo").disabled=false;$("sInfo").textContent+=" · terminado";
+}
+function stopStress(){stopFlag=true}
+async function failHealth(){if(!cfg.api)return showSetup();try{const r=await fetch(cfg.api+"/demo/fail-health",{method:"POST"});$("failTxt").textContent="Respuesta: "+r.status+" "+await r.text()}catch(e){$("failTxt").textContent="Error: "+e.message}}
+
+// ---- k8s via bridge
+let hpaHist=[];
+function age(t){const s=(Date.now()-new Date(t))/1000;return s<3600?Math.round(s/60)+"m":s<86400?Math.round(s/3600)+"h":Math.round(s/86400)+"d"}
+function tbl(h,rows){return rows.length?`<table><tr>${h.map(x=>`<th>${x}</th>`).join("")}</tr>${rows.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join("")}</tr>`).join("")}</table>`:'<span class="mu">vacío</span>'}
+function renderK8s(j){
+  const it=j.items||[],by=k=>it.filter(x=>x.kind===k);
+  const pods=by("Pod").filter(p=>/unsa-matricula|kube-system/.test(p.metadata.namespace));
+  $("pods").innerHTML=tbl(["Namespace","Pod","Listo","Estado","Reinicios","Nodo","Edad"],pods.map(p=>{
+    const cs=p.status.containerStatuses||[],rd=cs.filter(c=>c.ready).length,ph=p.status.phase,cl=ph==="Running"&&rd===cs.length?"ok":ph==="Pending"?"wa":"er";
+    return[p.metadata.namespace,p.metadata.name,rd+"/"+cs.length,`<span class="${cl}">${ph}</span>`,cs.reduce((a,c)=>a+c.restartCount,0),p.spec.nodeName||"—",age(p.metadata.creationTimestamp)]}));
+  $("nodes").innerHTML=tbl(["Nodo","Estado","CPU","Memoria","Versión"],by("Node").map(n=>{const r=(n.status.conditions||[]).find(c=>c.type==="Ready");return[n.metadata.name,`<span class="${r&&r.status==="True"?"ok":"er"}">${r&&r.status==="True"?"Ready":"NotReady"}</span>`,n.status.allocatable.cpu,Math.round(parseInt(n.status.allocatable.memory)/1048576)+" MiB",n.status.nodeInfo.kubeletVersion]}));
+  const hp=by("HorizontalPodAutoscaler");
+  $("hpas").innerHTML=tbl(["HPA","Actual/Deseado","Min–Max","CPU"],hp.map(h=>[h.metadata.name,(h.status.currentReplicas||0)+" / "+(h.status.desiredReplicas||0),h.spec.minReplicas+"–"+h.spec.maxReplicas,(h.status.currentMetrics&&h.status.currentMetrics[0]?h.status.currentMetrics[0].resource.current.averageUtilization:"?")+"% / "+(((h.spec.metrics||[])[0]||{resource:{target:{}}}).resource.target.averageUtilization||"?")+"%"]));
+  $("deps").innerHTML=tbl(["Deployment","Listos","Actualizados"],by("Deployment").filter(d=>d.metadata.namespace==="unsa-matricula").map(d=>[d.metadata.name,(d.status.readyReplicas||0)+"/"+d.spec.replicas,d.status.updatedReplicas||0]));
+  const b=hp.find(h=>/backend/.test(h.metadata.name));
+  if(b){hpaHist.push(b.status.currentReplicas||0);if(hpaHist.length>90)hpaHist.shift();$("hpaTxt").textContent=`backend: ${b.status.currentReplicas} réplicas (deseado ${b.status.desiredReplicas})`}
+  line($("cHpa"),[{d:hpaHist,c:css("--pu")}]);
+}
+async function pollBr(){
+  try{
+    const j=await (await fetch(cfg.br+"/k8s",{cache:"no-store"})).json();
+    if(j.error)throw new Error(j.error);
+    $("dBr").className="dot ok";$("tBr").textContent="Bridge: conectado";renderK8s(j);autofill();
+  }catch(e){$("dBr").className="dot er";$("tBr").textContent="Bridge: "+(e.message&&e.message!=="Failed to fetch"?"error · "+e.message.slice(0,60):"sin conexión")}
+}
+let filled=false;
+async function autofill(){if(filled)return;try{const i=await (await fetch(cfg.br+"/info")).json();if(!i.id)return;filled=true;let ch=false;if(!cfg.ec2){cfg.ec2=i.id;ch=true}if(!cfg.api&&i.ip){cfg.api="http://"+i.ip+"/api";ch=true}if(ch){try{localStorage.cfg=JSON.stringify(cfg)}catch(e){}reset();pollCw()}}catch(e){}}
+async function pollCw(){
+  if(!cfg.ec2)return;
+  try{
+    const j=await (await fetch(`${cfg.br}/cw?id=${cfg.ec2}`)).json();
+    const d=((j.cpu||{}).Datapoints||[]).sort((a,b)=>a.Timestamp<b.Timestamp?-1:1).map(x=>x.Average);
+    line($("cCw"),[{d,c:css("--wa")}],{max:100});$("cwTxt").textContent=d.length?"CPU actual "+d[d.length-1].toFixed(1)+" %":"Sin datos (¿ID correcto? CloudWatch tarda ~5 min)";
+  }catch(e){}
+}
+setInterval(pollBr,3000);setInterval(pollCw,30000);
+
+// ---- datos reales del experimento HPA (evidencia)
+const EXP={rep:[2,2,2,2,4,5,5,5,5,5,5,5,5,5],cpu:[1,1,276,276,495,472,472,469,482,482,482,492,489,489],pods:[2,2,4,4,5,5,5,5,5,5,5,5,5,5]};
+function drawExp(){line($("cExp"),[{d:EXP.cpu,c:css("--wa")},{d:EXP.rep.map(x=>x*100),c:css("--ac")}])}
+
+function demoData(){
+  const mk=(n,ph,node)=>({kind:"Pod",metadata:{namespace:"unsa-matricula",name:n,creationTimestamp:new Date(Date.now()-3.6e6).toISOString()},spec:{nodeName:node},status:{phase:ph,containerStatuses:[{ready:true,restartCount:0}]}});
+  renderK8s({items:[mk("backend-5bf775555c-zglrb","Running","k3s-node"),mk("backend-5bf775555c-jf4v8","Running","k3s-node"),mk("frontend-7c9d6b-x2k4p","Running","k3s-node"),mk("postgres-0","Running","k3s-node"),mk("redis-6f7b8-q9w2e","Running","k3s-node"),
+    {kind:"Node",metadata:{name:"k3s-node"},status:{conditions:[{type:"Ready",status:"True"}],allocatable:{cpu:"2",memory:"3900000Ki"},nodeInfo:{kubeletVersion:"v1.30.x+k3s1"}}},
+    {kind:"HorizontalPodAutoscaler",metadata:{name:"backend-hpa"},spec:{minReplicas:2,maxReplicas:5,metrics:[{resource:{target:{averageUtilization:50}}}]},status:{currentReplicas:2,desiredReplicas:2,currentMetrics:[{resource:{current:{averageUtilization:1}}}]}},
+    {kind:"Deployment",metadata:{namespace:"unsa-matricula",name:"backend"},spec:{replicas:2},status:{readyReplicas:2,updatedReplicas:2}}]});
+  $("dlg").close();tab("cluster");
+}
+addEventListener("resize",()=>{render();drawExp()});
+tab((()=>{try{return localStorage.tab}catch(e){}})()||"live");
+if(!cfg.api)setTimeout(showSetup,400);
+render();pollBr();
+</script>
+</body>
+</html>
